@@ -48,7 +48,6 @@ $(function() {
          * (通过判断body是否有menu-hidden这个样式判断)
          */
         it('hidden by default', function(){
-            //expect(b.getAttribute("class")).toContain('menu-hidden');
             expect(b.hasClass('menu-hidden')).toBeTruthy();
         })
 

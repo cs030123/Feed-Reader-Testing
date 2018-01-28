@@ -1,65 +1,105 @@
 /* feedreader.js
  *
- * 这是 Jasmine 会读取的spec文件，它包含所有的要在你应用上面运行的测试。
+ * 1. 这是 Jasmine 会读取的spec文件，它包含所有的要在你应用上面运行的测试。
+ * 2. 由于部分测试需要 DOM 元素，所以在DOM准备好后再开始测试。
  */
 
-/* 我们把所有的测试都放在了 $() 函数里面。因为有些测试需要 DOM 元素。
- * 我们得保证在 DOM 准备好之前他们不会被运行。
- */
 $(function() {
-    /* 这是我们第一个测试用例 - 其中包含了一定数量的测试。这个用例的测试
-     * 都是关于 Rss 源的定义的，也就是应用中的 allFeeds 变量。
-    */
+    /* 测试用例RSS Feeds，用于检查RSS源是否定义 */
     describe('RSS Feeds', function() {
-        /* 这是我们的第一个测试 - 它用来保证 allFeeds 变量被定义了而且
-         * 不是空的。在你开始做这个项目剩下的工作之前最好实验一下这个测试
-         * 比如你把 app.js 里面的 allFeeds 变量变成一个空的数组然后刷新
-         * 页面看看会发生什么。
-        */
+       /* 检测allFeeds是否已经定义且有内容 */
         it('are defined', function() {
             expect(allFeeds).toBeDefined();
             expect(allFeeds.length).not.toBe(0);
         });
 
+        /* 遍历 allFeeds 对象里面的所有的源来保证有链接字段而且链接不是空的 */
+        it('each feed has url', function(){
+            for (let i = allFeeds.length - 1; i >= 0; i--) {
+                var feedUrl = allFeeds[i].url;
+                expect(feedUrl).toBeDefined();
+                expect(feedUrl).not.toBe(null);
+                expect(feedUrl.length).not.toBe(0);
+            }
+        });
 
-        /* TODO:
-         * 编写一个测试遍历 allFeeds 对象里面的所有的源来保证有链接字段而且链接不是空的。
-         */
-
-
-        /* TODO:
-         * 编写一个测试遍历 allFeeds 对象里面的所有的源来保证有名字字段而且不是空的。
-         */
+        /* 遍历 allFeeds 对象里面的所有的源来保证有名字字段而且不是空的 */
+        it('each feed has name', function(){
+            for (let i = allFeeds.length - 1; i >= 0; i--) {
+                var feedName = allFeeds[i].name;
+                expect(feedName).toBeDefined();
+                expect(feedName).not.toBe(null);
+                expect(feedName.length).not.toBe(0);
+            }
+        });
     });
 
 
-    /* TODO: 写一个叫做 "The menu" 的测试用例 */
+    /* 测试用例The menu */
+    describe('The menu', function(){
+        var b;
 
-        /* TODO:
-         * 写一个测试用例保证菜单元素默认是隐藏的。你需要分析 html 和 css
-         * 来搞清楚我们是怎么实现隐藏/展示菜单元素的。
+        beforeAll(function(){
+            b = $('body');      
+        });
+
+        /* 
+         * 检测菜单元素默认是否是隐藏的。
+         * (通过判断body是否有menu-hidden这个样式判断)
          */
+        it('hidden by default', function(){
+            //expect(b.getAttribute("class")).toContain('menu-hidden');
+            expect(b.hasClass('menu-hidden')).toBeTruthy();
+        })
 
-         /* TODO:
-          * 写一个测试用例保证当菜单图标被点击的时候菜单会切换可见状态。这个
-          * 测试应该包含两个 expectation ： 党点击图标的时候菜单是否显示，
-          * 再次点击的时候是否隐藏。
+         /* 
+          * 检测菜单图标被点击的时候菜单会切换可见状态。
+          * 包含两个 expectation ：点击图标的时候菜单是否显示，再次点击的时候是否隐藏。
           */
+        it('show/hidden by click icon', function(){
+            var menuIcon = $('.menu-icon-link');
+            menuIcon.trigger('click');
+            expect(b.hasClass('menu-hidden')).toBeFalsy();
+            menuIcon.trigger('click');
+            expect(b.hasClass('menu-hidden')).toBeTruthy();            
+        })
+        
+    });
 
-    /* TODO: 13. 写一个叫做 "Initial Entries" 的测试用例 */
-
-        /* TODO:
-         * 写一个测试保证 loadFeed 函数被调用而且工作正常，即在 .feed 容器元素
-         * 里面至少有一个 .entry 的元素。
-         *
-         * 记住 loadFeed() 函数是异步的所以这个而是应该使用 Jasmine 的 beforeEach
-         * 和异步的 done() 函数。
+    /* 测试用例Initial Entries */
+    describe('Initial Entries', function(){
+        /* 
+         * 使用 Jasmine 的 beforeEach 和异步的 done() 函数检测 loadFeed 这个异步函数
+         * 被调用而且工作正常，即在 .feed 容器元素里面至少有一个 .entry 的元素。
          */
+        beforeEach(function(done){
+            loadFeed(0, done);
+        });
 
-    /* TODO: 写一个叫做 "New Feed Selection" 的测试用例 */
+        it('load feed success', function(done){
+            var entries = $('a.entry-link');
+            expect(entries.length).toBeGreaterThan(0);
+            done();   
+        })       
+    }); 
 
-        /* TODO:
-         * 写一个测试保证当用 loadFeed 函数加载一个新源的时候内容会真的改变。
-         * 记住，loadFeed() 函数是异步的。
+    /* 测试用例： New Feed Selection */
+    describe('New Feed Selection', function(){
+        var lastFirstTitle;
+        /* 
+         * 检测当用 loadFeed 函数加载一个新源的时候内容会真的改变。
          */
+        beforeEach(function(done){
+            loadFeed(0, function(){
+                lastFirstTitle = $('a.entry-link:first h2').html();
+                loadFeed(3, done);
+            });
+        });
+
+        it('feed changes by reload', function(done){
+            var newFirtTitle = $('a.entry-link:first h2').html();
+            expect(newFirtTitle).not.toEqual(lastFirstTitle);
+            done();
+        });  
+    }); 
 }());
